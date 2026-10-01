@@ -10,8 +10,8 @@
 
 <!-- Item titles look like "Peanuts en Español - 2026-10-01". -->
 {% assign day = item.title | split: " - " | last %}
-{% assign weekdays = "lunes,martes,miércoles,jueves,viernes,sábado,domingo" | split: "," %}
-{% assign months = "enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre" | split: "," %}
+{% assign weekdays = "Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo" | split: "," %}
+{% assign months = "Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre" | split: "," %}
 {% assign weekday_index = day | date: "%u" | minus: 1 %}
 {% assign month_index = day | date: "%-m" | minus: 1 %}
 {% assign weekday = weekdays[weekday_index] %}
