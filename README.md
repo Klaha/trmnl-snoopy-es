@@ -1,12 +1,28 @@
 # trmnl-snoopy-es
 
-Shows the daily [Snoopy en Español](https://www.gocomics.com/peanuts-espanol) strip on a TRMNL OG.
+Shows the daily [Snoopy en Español](https://www.gocomics.com/peanuts-espanol) strip on a TRMNL.
 
-A launchd job on the Mac reads the day's strip URL from GoComics and sends it to a TRMNL private plugin webhook. TRMNL loads the image straight from GoComics; no images are stored or rehosted here.
+## Recipe (recommended)
 
-It runs on the Mac because GoComics blocks datacenter IPs (GitHub Actions gets a 403).
+A TRMNL private plugin with no server of its own:
 
-## Setup
+- **Strategy:** Polling, URL `https://comiccaster.xyz/rss/peanuts-espanol`.
+- **Markup:** paste `recipe/shared.liquid` into **Shared** and leave the four layouts empty; the template adapts to full, half and quadrant views, in landscape and portrait.
+- **Form fields:** paste `recipe/form_fields.yml`.
+
+GoComics' CDN converts the strip to grays (`?optimizer=image&saturation=-100…`). In narrow views a small script finds the four panels of a daily strip and lays them out as a 2x2 grid or a column when that makes them bigger; Sunday strips and anything unexpected are shown whole.
+
+Preview every layout on the OG and the X, in both orientations, with the live feed:
+
+```sh
+pip install -r tools/requirements.txt && playwright install chromium
+python tools/preview.py            # newest strip
+python tools/preview.py --item 4   # an older one (e.g. a Sunday)
+```
+
+## Webhook + launchd (first version)
+
+Before the recipe, a launchd job on the Mac read the day's strip URL from GoComics and sent it to a webhook plugin. It needs the Mac to be on because GoComics blocks datacenter IPs (GitHub Actions gets a 403).
 
 1. On TRMNL, create a private plugin with the **Webhook** strategy and paste `trmnl/full.liquid` into the Full markup.
 2. Install the daily job with the plugin's webhook URL:
@@ -24,4 +40,4 @@ rm ~/Library/LaunchAgents/com.klaha.trmnl-snoopy-es.plist
 rm -r ~/Library/Application\ Support/trmnl-snoopy-es
 ```
 
-Personal use only: Peanuts is © Peanuts Worldwide.
+Peanuts is © Peanuts Worldwide LLC. This project stores no strips: it only links to the images GoComics serves.

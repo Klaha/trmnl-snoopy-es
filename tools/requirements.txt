@@ -1,0 +1,5 @@
+python-liquid
+xmltodict
+playwright
+pillow
+requests

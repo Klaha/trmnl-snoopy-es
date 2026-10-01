@@ -3,3 +3,4 @@ __pycache__/
 *.png
 webhook-url.txt
 .DS_Store
+preview/

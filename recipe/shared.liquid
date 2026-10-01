@@ -4,9 +4,9 @@
 {% assign item = rss.channel.item | first %}
 
 <!-- The feed's description is HTML with one <img>; keep its URL without ComicCaster's query string. -->
-{% assign image = item.description | split: 'src="' | last | split: '"' | first | split: "?" | first %}
-<!-- GoComics' CDN resizes, removes colour and lightens backgrounds for e-ink before TRMNL renders. -->
-{% assign image = image | append: "?optimizer=image&width=800&saturation=-100&brightness=15&contrast=20&format=png" %}
+{% assign original = item.description | split: 'src="' | last | split: '"' | first | split: "?" | first %}
+<!-- GoComics' CDN removes colour and lightens backgrounds for e-ink before TRMNL renders. -->
+{% assign image = original | append: "?optimizer=image&saturation=-100&brightness=15&contrast=20&format=png" %}
 
 <!-- Item titles look like "Peanuts en Español - 2026-10-01". -->
 {% assign day = item.title | split: " - " | last %}
@@ -14,12 +14,109 @@
 {% assign months = "enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre" | split: "," %}
 {% assign weekday_index = day | date: "%u" | minus: 1 %}
 {% assign month_index = day | date: "%-m" | minus: 1 %}
+{% assign weekday = weekdays[weekday_index] %}
+{% assign month = months[month_index] %}
+
+<style>
+  .snoopy { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .snoopy__whole { max-width: 100%; max-height: 100%; }
+  .snoopy__grid { display: grid; gap: 8px; justify-items: center; }
+  .snoopy__panel { position: relative; overflow: hidden; }
+  .snoopy__panel img { position: absolute; top: 0; height: 100%; max-width: none; }
+  .snoopy-date--short { display: none; }
+  .view--half_vertical .snoopy-date--long, .view--quadrant .snoopy-date--long,
+  .screen--portrait .snoopy-date--long { display: none; }
+  .view--half_vertical .snoopy-date--short, .view--quadrant .snoopy-date--short,
+  .screen--portrait .snoopy-date--short { display: inline; }
+</style>
 
 <div class="layout layout--col layout--center">
-  <img src="{{ image }}" alt="Snoopy en Español" style="max-width: 100%; max-height: 100%;">
+  <div class="snoopy" data-original="{{ original }}">
+    <img class="snoopy__whole" src="{{ image }}" alt="Snoopy en Español">
+  </div>
 </div>
 
 <div class="title_bar">
+  <img class="image image--adaptive" alt=""
+    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none' stroke='black' stroke-width='2.5' stroke-linejoin='round'%3E%3Cpath d='M3 13 14 3l11 10M6 11v14h16V11'/%3E%3Cpath d='M11 25v-7a3 3 0 0 1 6 0v7'/%3E%3C/svg%3E">
   <span class="title">Snoopy</span>
-  <span class="instance">{{ weekdays[weekday_index] }}, {{ day | date: "%-d" }} de {{ months[month_index] }}</span>
+  <span class="instance">
+    <span class="snoopy-date--long">{{ weekday }}, {{ day | date: "%-d" }} de {{ month }}</span>
+    <span class="snoopy-date--short">{{ day | date: "%-d" }} {{ month | slice: 0, 3 }}</span>
+  </span>
 </div>
+
+<script>
+  // In narrow views a 4-panel daily strip reads better as a 2x2 grid or a column. Panel edges are found on
+  // the original image (the only one served with CORS); anything unexpected keeps the whole strip.
+  (function () {
+    var box = document.currentScript.parentElement.querySelector(".snoopy");
+    var shown = box.querySelector(".snoopy__whole");
+    var probe = new Image();
+    probe.crossOrigin = "anonymous";
+    probe.onload = function () {
+      var W = probe.naturalWidth, H = probe.naturalHeight;
+      var panels = findPanels(probe, W, H);
+      if (panels.length !== 4) return;
+
+      // Try the panels as 2x2 and as a single column; keep the whole strip unless one is clearly bigger.
+      var gap = 8;
+      var panelWidth = Math.max.apply(null, panels.map(function (panel) { return panel[1]; }));
+      var best = { scale: Math.min(box.clientWidth / W, box.clientHeight / H) * 1.15 };
+      [2, 1].forEach(function (columns) {
+        var rows = 4 / columns;
+        var scale = Math.min(
+          (box.clientWidth - gap * (columns - 1)) / (columns * panelWidth),
+          (box.clientHeight - gap * (rows - 1)) / (rows * H)
+        );
+        if (scale > best.scale) best = { scale: scale, columns: columns };
+      });
+      if (!best.columns) return;
+
+      var grid = document.createElement("div");
+      grid.className = "snoopy__grid";
+      grid.style.gridTemplateColumns = "repeat(" + best.columns + ", auto)";
+      panels.forEach(function (panel) {
+        var cell = document.createElement("div");
+        cell.className = "snoopy__panel";
+        cell.style.width = panel[1] * best.scale + "px";
+        cell.style.height = H * best.scale + "px";
+        var img = document.createElement("img");
+        img.src = shown.src;
+        img.style.width = W * best.scale + "px";
+        img.style.left = -panel[0] * best.scale + "px";
+        cell.appendChild(img);
+        grid.appendChild(cell);
+      });
+      box.replaceChild(grid, shown);
+    };
+    probe.src = box.dataset.original;
+
+    // Panels are runs of columns with ink, separated by blank gutters. Returns [[x, width], ...].
+    function findPanels(img, W, H) {
+      var canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      var pixels;
+      try { pixels = ctx.getImageData(0, 0, W, H).data; } catch (e) { return []; }
+
+      var panels = [], start = -1;
+      for (var x = 0; x <= W; x++) {
+        var ink = 0;
+        for (var y = 0; x < W && y < H; y++) {
+          var i = (y * W + x) * 4;
+          if (pixels[i] * 0.3 + pixels[i + 1] * 0.59 + pixels[i + 2] * 0.11 < 200) ink++;
+        }
+        var blank = x === W || ink < H * 0.03;
+        if (!blank && start < 0) start = x;
+        if (blank && start >= 0) {
+          if (x - start > W * 0.05) panels.push([start, x - start]);
+          start = -1;
+        }
+      }
+      return panels;
+    }
+  })();
+</script>
