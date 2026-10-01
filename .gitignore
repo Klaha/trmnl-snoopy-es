@@ -4,3 +4,4 @@ __pycache__/
 webhook-url.txt
 .DS_Store
 preview/
+!recipe/icon.png

@@ -1,12 +1,6 @@
-# Paste into the private plugin's "Form Fields" editor.
 - keyname: author_bio
   name: About
   field_type: author_bio
-  description: >-
-    Tira diaria de <b>Snoopy en Español</b> (Peanuts, de Charles M. Schulz), preparada para e-ink.<br/>
-    The daily Spanish-language Peanuts strip, prepared for e-ink: grayscale, lighter backgrounds,
-    and in narrow layouts the four panels are rearranged into a grid or a column so they stay readable.<br/>
-    Source: <a href="https://www.gocomics.com/peanuts-espanol">GoComics</a> via the
-    <a href="https://comiccaster.xyz">ComicCaster</a> feed. Peanuts © Peanuts Worldwide LLC.
+  description: "Tira diaria de <b>Snoopy en Español</b> (Peanuts, de Charles M. Schulz), preparada para e-ink.<br/>The daily Spanish-language Peanuts strip, prepared for e-ink: grayscale, lighter backgrounds, and in narrow layouts the four panels are rearranged into a grid or a column so they stay readable.<br/>Source: <a href='https://www.gocomics.com/peanuts-espanol'>GoComics</a> via the <a href='https://comiccaster.xyz'>ComicCaster</a> feed. Peanuts © Peanuts Worldwide LLC."
   category: comics,humor
   github_url: https://github.com/Klaha/trmnl-snoopy-es
