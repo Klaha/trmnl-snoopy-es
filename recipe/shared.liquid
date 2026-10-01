@@ -52,7 +52,10 @@
     probe.onload = function () {
       var W = probe.naturalWidth, H = probe.naturalHeight;
       var panels = findPanels(probe, W, H);
-      if (panels.length !== 4) return;
+      if (panels.length !== 4) {
+        console.log("snoopy: found " + panels.length + " panels, showing the whole strip");
+        return;
+      }
 
       // Try the panels as 2x2 and as a single column; keep the whole strip unless one is clearly bigger.
       var gap = 8;
