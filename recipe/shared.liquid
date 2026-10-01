@@ -1,0 +1,25 @@
+<!-- Shared markup for the public recipe (Polling strategy). Leave the four layouts empty:
+     this responsive template renders on its own in full, half and quadrant views.
+     Polling URL: https://comiccaster.xyz/rss/peanuts-espanol -->
+{% assign item = rss.channel.item | first %}
+
+<!-- The feed's description is HTML with one <img>; keep its URL without ComicCaster's query string. -->
+{% assign image = item.description | split: 'src="' | last | split: '"' | first | split: "?" | first %}
+<!-- GoComics' CDN resizes, removes colour and lightens backgrounds for e-ink before TRMNL renders. -->
+{% assign image = image | append: "?optimizer=image&width=800&saturation=-100&brightness=15&contrast=20&format=png" %}
+
+<!-- Item titles look like "Peanuts en Español - 2026-10-01". -->
+{% assign day = item.title | split: " - " | last %}
+{% assign weekdays = "lunes,martes,miércoles,jueves,viernes,sábado,domingo" | split: "," %}
+{% assign months = "enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre" | split: "," %}
+{% assign weekday_index = day | date: "%u" | minus: 1 %}
+{% assign month_index = day | date: "%-m" | minus: 1 %}
+
+<div class="layout layout--col layout--center">
+  <img src="{{ image }}" alt="Snoopy en Español" style="max-width: 100%; max-height: 100%;">
+</div>
+
+<div class="title_bar">
+  <span class="title">Snoopy</span>
+  <span class="instance">{{ weekdays[weekday_index] }}, {{ day | date: "%-d" }} de {{ months[month_index] }}</span>
+</div>
