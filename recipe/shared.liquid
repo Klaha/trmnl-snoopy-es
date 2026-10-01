@@ -17,22 +17,9 @@
 {% assign weekday = weekdays[weekday_index] %}
 {% assign month = months[month_index] %}
 
-<style>
-  .snoopy { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-  .snoopy__whole { max-width: 100%; max-height: 100%; }
-  .snoopy__grid { display: grid; gap: 8px; justify-items: center; }
-  .snoopy__panel { position: relative; overflow: hidden; }
-  .snoopy__panel img { position: absolute; top: 0; height: 100%; max-width: none; }
-  .snoopy-date--short { display: none; }
-  .view--half_vertical .snoopy-date--long, .view--quadrant .snoopy-date--long,
-  .screen--portrait .snoopy-date--long { display: none; }
-  .view--half_vertical .snoopy-date--short, .view--quadrant .snoopy-date--short,
-  .screen--portrait .snoopy-date--short { display: inline; }
-</style>
-
 <div class="layout layout--col layout--center">
-  <div class="snoopy" data-original="{{ original }}">
-    <img class="snoopy__whole" src="{{ image }}" alt="Snoopy en Español">
+  <div class="snoopy w--full h--full flex flex--row flex--center" data-original="{{ original }}">
+    <img src="{{ image }}" alt="Snoopy en Español" style="max-width: 100%; max-height: 100%;">
   </div>
 </div>
 
@@ -41,8 +28,8 @@
     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none' stroke='black' stroke-width='2.5' stroke-linejoin='round'%3E%3Cpath d='M3 13 14 3l11 10M6 11v14h16V11'/%3E%3Cpath d='M11 25v-7a3 3 0 0 1 6 0v7'/%3E%3C/svg%3E">
   <span class="title">Snoopy</span>
   <span class="instance">
-    <span class="snoopy-date--long">{{ weekday }}, {{ day | date: "%-d" }} de {{ month }}</span>
-    <span class="snoopy-date--short">{{ day | date: "%-d" }} {{ month | slice: 0, 3 }}</span>
+    <span class="snoopy-date--long portrait:hidden">{{ weekday }}, {{ day | date: "%-d" }} de {{ month }}</span>
+    <span class="snoopy-date--short hidden portrait:inline">{{ day | date: "%-d" }} {{ month | slice: 0, 3 }}</span>
   </span>
 </div>
 
@@ -50,8 +37,16 @@
   // In narrow views a 4-panel daily strip reads better as a 2x2 grid or a column. Panel edges are found on
   // the original image (the only one served with CORS); anything unexpected keeps the whole strip.
   (function () {
-    var box = document.currentScript.parentElement.querySelector(".snoopy");
-    var shown = box.querySelector(".snoopy__whole");
+    var view = document.currentScript.parentElement;
+    var box = view.querySelector(".snoopy");
+    var shown = box.querySelector("img");
+
+    // portrait: classes cover portrait screens; narrow views in landscape need the short date too.
+    if (/view--(half_vertical|quadrant)/.test(view.className)) {
+      view.querySelector(".snoopy-date--long").classList.add("hidden");
+      view.querySelector(".snoopy-date--short").classList.remove("hidden");
+    }
+
     var probe = new Image();
     probe.crossOrigin = "anonymous";
     probe.onload = function () {
@@ -74,15 +69,23 @@
       if (!best.columns) return;
 
       var grid = document.createElement("div");
-      grid.className = "snoopy__grid";
-      grid.style.gridTemplateColumns = "repeat(" + best.columns + ", auto)";
+      grid.className = "grid";
+      grid.style.gap = gap + "px";
+      grid.style.gridTemplateColumns = "repeat(" + best.columns + ", max-content)";
+      grid.style.justifyContent = "center";
+      grid.style.alignContent = "center";
       panels.forEach(function (panel) {
         var cell = document.createElement("div");
-        cell.className = "snoopy__panel";
+        cell.style.position = "relative";
+        cell.style.overflow = "hidden";
         cell.style.width = panel[1] * best.scale + "px";
         cell.style.height = H * best.scale + "px";
         var img = document.createElement("img");
         img.src = shown.src;
+        img.style.position = "absolute";
+        img.style.top = "0";
+        img.style.height = "100%";
+        img.style.maxWidth = "none";
         img.style.width = W * best.scale + "px";
         img.style.left = -panel[0] * best.scale + "px";
         cell.appendChild(img);
