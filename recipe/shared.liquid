@@ -1,5 +1,5 @@
-<!-- Shared markup for the public recipe (Polling strategy). Leave the four layouts empty:
-     this responsive template renders on its own in full, half and quadrant views.
+<!-- Shared markup for the public recipe (Polling strategy), prepended to every layout.
+     It works out the strip and the date, and defines the "snoopy" template each layout renders.
      Polling URL: https://comiccaster.xyz/rss/peanuts-espanol -->
 {% assign item = rss.channel.item | first %}
 
@@ -16,6 +16,12 @@
 {% assign month_index = day | date: "%-m" | minus: 1 %}
 {% assign weekday = weekdays[weekday_index] %}
 {% assign month = months[month_index] %}
+{% assign day_number = day | date: "%-d" %}
+{% capture long_date %}{{ weekday }}, {{ day_number }} de {{ month }}{% endcapture %}
+{% capture short_date %}{{ day_number }} {{ month | slice: 0, 3 }}{% endcapture %}
+
+<!-- narrow: true for half vertical and quadrant views, which only fit the short date. -->
+{% template snoopy %}
 
 <div class="layout layout--col layout--center">
   <div class="snoopy w--full h--full flex flex--row flex--center" data-original="{{ original }}">
@@ -28,8 +34,12 @@
     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none' stroke='black' stroke-width='2.5' stroke-linejoin='round'%3E%3Cpath d='M3 13 14 3l11 10M6 11v14h16V11'/%3E%3Cpath d='M11 25v-7a3 3 0 0 1 6 0v7'/%3E%3C/svg%3E">
   <span class="title">Snoopy</span>
   <span class="instance">
-    <span class="snoopy-date--long portrait:hidden">{{ weekday }}, {{ day | date: "%-d" }} de {{ month }}</span>
-    <span class="snoopy-date--short hidden portrait:inline">{{ day | date: "%-d" }} {{ month | slice: 0, 3 }}</span>
+    {% if narrow %}
+      {{ short_date }}
+    {% else %}
+      <span class="portrait:hidden">{{ long_date }}</span>
+      <span class="hidden portrait:inline">{{ short_date }}</span>
+    {% endif %}
   </span>
 </div>
 
@@ -37,15 +47,8 @@
   // In narrow views a 4-panel daily strip reads better as a 2x2 grid or a column. Panel edges are found on
   // the original image (the only one served with CORS); anything unexpected keeps the whole strip.
   (function () {
-    var view = document.currentScript.parentElement;
-    var box = view.querySelector(".snoopy");
+    var box = document.currentScript.parentElement.querySelector(".snoopy");
     var shown = box.querySelector("img");
-
-    // portrait: classes cover portrait screens; narrow views in landscape need the short date too.
-    if (/view--(half_vertical|quadrant)/.test(view.className)) {
-      view.querySelector(".snoopy-date--long").classList.add("hidden");
-      view.querySelector(".snoopy-date--short").classList.remove("hidden");
-    }
 
     var probe = new Image();
     probe.crossOrigin = "anonymous";
@@ -126,3 +129,4 @@
     }
   })();
 </script>
+{% endtemplate %}

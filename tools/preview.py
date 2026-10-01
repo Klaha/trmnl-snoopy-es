@@ -1,20 +1,21 @@
-"""Render recipe/shared.liquid with the live feed and TRMNL's framework CSS, in every layout, for review.
+"""Render the recipe's Liquid with the live feed and TRMNL's framework CSS, in every layout, for review.
 
 Usage: python tools/preview.py [--item N] [--out DIR]   (item 0 is the newest strip)
 Writes one contact sheet per device and orientation, reduced to the device's grays.
 """
 
 import argparse
+import re
 from pathlib import Path
 
 import requests
 import xmltodict
-from liquid import Environment
+from liquid import DictLoader, Environment
 from PIL import Image, ImageDraw
 from playwright.sync_api import sync_playwright
 
 FEED_URL = "https://comiccaster.xyz/rss/peanuts-espanol"
-TEMPLATE = Path(__file__).parent.parent / "recipe" / "shared.liquid"
+RECIPE = Path(__file__).parent.parent / "recipe"
 
 # (name, screen classes, width, height, grays)
 SCREENS = [
@@ -40,11 +41,26 @@ PAGE = """<!doctype html>
 </body></html>"""
 
 
-def render_markup(item: int) -> str:
+def render_markup(item: int) -> dict:
+    """Markup per layout: TRMNL prepends the shared markup to each layout before rendering."""
     data = xmltodict.parse(requests.get(FEED_URL, timeout=15).text)
     # Mimic "show item N" by dropping the newer ones; the template always takes the first.
     data["rss"]["channel"]["item"] = data["rss"]["channel"]["item"][item:]
-    return Environment().from_string(TEMPLATE.read_text()).render(**data)
+
+    # {% template name %} is TRMNL's own tag: turn each block into a partial for {% render %}.
+    partials = {}
+
+    def extract(match):
+        partials[match.group(1)] = match.group(2)
+        return ""
+
+    shared = re.sub(r"{%\s*template\s+(\w+)\s*%}(.*?){%\s*endtemplate\s*%}", extract,
+                    (RECIPE / "shared.liquid").read_text(), flags=re.S)
+    env = Environment(loader=DictLoader(partials))
+    return {
+        layout: env.from_string(shared + (RECIPE / f"{layout}.liquid").read_text()).render(**data)
+        for layout, _, _ in LAYOUTS
+    }
 
 
 def main():
@@ -55,7 +71,7 @@ def main():
 
     out = Path(args.out)
     out.mkdir(exist_ok=True)
-    markup = render_markup(args.item)
+    markups = render_markup(args.item)
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -63,7 +79,7 @@ def main():
             shots = []
             page = browser.new_page(viewport={"width": width, "height": height})
             for layout, mashup, views in LAYOUTS:
-                html_views = "".join(f'<div class="view view--{v}">{markup}</div>' for v in views)
+                html_views = "".join(f'<div class="view view--{v}">{markups[layout]}</div>' for v in views)
                 page.set_content(PAGE.format(screen=screen, mashup=mashup, views=html_views))
                 page.wait_for_load_state("networkidle")
                 path = out / f"{name}-{layout}.png"

@@ -7,7 +7,7 @@ Shows the daily [Snoopy en Español](https://www.gocomics.com/peanuts-espanol) s
 A TRMNL private plugin with no server of its own:
 
 - **Strategy:** Polling, URL `https://comiccaster.xyz/rss/peanuts-espanol`.
-- **Markup:** paste `recipe/shared.liquid` into **Shared** and leave the four layouts empty; the template adapts to full, half and quadrant views, in landscape and portrait.
+- **Markup:** paste `recipe/shared.liquid` into **Shared** and each of `recipe/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid` and `quadrant.liquid` into its layout. Shared works out the strip and the date and defines a `snoopy` template; each layout renders it (the narrow ones ask for the short date). It adapts to landscape and portrait.
 - **Form fields:** paste `recipe/form_fields.yml`.
 
 GoComics' CDN converts the strip to grays (`?optimizer=image&saturation=-100…`). In narrow views a small script finds the four panels of a daily strip and lays them out as a 2x2 grid or a column when that makes them bigger; Sunday strips and anything unexpected are shown whole.
