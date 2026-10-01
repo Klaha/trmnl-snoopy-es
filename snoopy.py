@@ -2,6 +2,7 @@
 
 import argparse
 import io
+import json
 import re
 from datetime import date, datetime
 
@@ -23,6 +24,8 @@ MAX_WIDTH, MAX_HEIGHT = 800, 430
 WHITE_POINT = 200
 # The OG shows 4 grays (2-bit) on current firmware; 1-bit is pure black and white.
 PALETTES = {2: [0, 85, 170, 255], 1: [0, 255]}
+MONTHS = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
+WEEKDAYS = "lunes martes miércoles jueves viernes sábado domingo".split()
 
 
 def strip_image_url(day: date) -> str:
@@ -75,12 +78,21 @@ def preview(strip: Image.Image) -> Image.Image:
     return ImageOps.expand(screen, border=2, fill=128)
 
 
+def strip_info(day: date) -> dict:
+    """Variables the TRMNL template receives through the webhook."""
+    return {
+        "date": day.isoformat(),
+        "date_label": f"{WEEKDAYS[day.weekday()]}, {day.day} de {MONTHS[day.month - 1]} de {day.year}",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(), default=date.today())
     parser.add_argument("--bits", type=int, choices=[1, 2], default=2)
     parser.add_argument("--dither", action="store_true")
     parser.add_argument("--out", default="strip.png")
+    parser.add_argument("--json", help="also save the template variables (date) here")
     parser.add_argument("--preview", help="also save a simulated 800x480 screen here")
     args = parser.parse_args()
 
@@ -88,6 +100,9 @@ def main():
     print(image_url)
     strip = to_eink(download(image_url), bits=args.bits, dither=args.dither)
     strip.save(args.out, optimize=True)
+    if args.json:
+        with open(args.json, "w") as f:
+            json.dump(strip_info(args.date), f, ensure_ascii=False)
     if args.preview:
         preview(strip).save(args.preview)
 
