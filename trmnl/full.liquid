@@ -1,10 +1,11 @@
 <!-- Markup for the "Full" layout of the TRMNL private plugin. Paste it into the plugin's Markup Editor. -->
-<!-- The strip is already reduced to the OG's 4 grays, so no image-dither class here. -->
+<!-- The strips come in colour: go to grayscale and push light pastel backgrounds to white
+     (brightness 1.28 sends every gray >= 200 to 255) so they don't turn into gray noise on e-ink. -->
 <div class="layout layout--col layout--center">
   <img
-    src="https://klaha.github.io/trmnl-snoopy-es/strip.png?v={{ date }}"
+    src="{{ image_url }}"
     alt="Snoopy en Español"
-    style="max-width: 100%; max-height: 100%; image-rendering: pixelated;"
+    style="max-width: 100%; max-height: 100%; filter: grayscale(1) brightness(1.28);"
   >
 </div>
 
