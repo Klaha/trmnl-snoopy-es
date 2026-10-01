@@ -36,7 +36,9 @@ jobs:
       - name: Fetch and process today's strip
         run: |
           mkdir -p site
-          python snoopy.py --out site/strip.png --json site/strip.json
+          # Surface the error as an annotation so it shows on the run summary.
+          python snoopy.py --out site/strip.png --json site/strip.json 2> error.txt \
+            || { cat error.txt; echo "::error::$(tail -n 1 error.txt)"; exit 1; }
 
       - uses: actions/upload-pages-artifact@v3
         with:
